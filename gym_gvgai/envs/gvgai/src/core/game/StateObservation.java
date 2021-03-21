@@ -305,7 +305,7 @@ public class StateObservation {
      *
      * @return Observations of NPCs in the game.
      */
-    public ArrayList<Observation>[] getNPCPositions()
+        public ArrayList<Observation>[] getNPCPositions()
     {
         return model.getNPCPositions(null);
     }
