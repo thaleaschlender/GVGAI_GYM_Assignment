@@ -17,7 +17,6 @@ public class Agent extends AbstractPlayer {
     public Types.ACTIONS[] actions;
 
     protected SingleMCTSPlayer mctsPlayer;
-
     /**
      * Public constructor with state observation and time due.
      * @param so state observation of the current game.

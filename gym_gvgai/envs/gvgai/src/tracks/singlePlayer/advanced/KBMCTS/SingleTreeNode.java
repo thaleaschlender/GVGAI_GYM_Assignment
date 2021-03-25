@@ -15,16 +15,7 @@ import java.util.Random;
 
 public class SingleTreeNode
 {
-    //evolutionary strategy attempt: euclidean distances from the avatar to the different types of closest NPC, resource, non-static object and portal.
     public static Random r = new Random();
-    public static boolean initialised = false;
-    public static double[] weights = new double[10];
-    public static double[] new_weights = new double[10];
-    public static double performance_weights = 0;
-    public static double performance_new_weights = 0;
-    public static double[] sigmas = new double[10];
-    public static double tau_0 = 1/(Math.sqrt(2*sigmas.length));
-    public static double tau_1 = 1/(Math.sqrt(2*Math.sqrt(sigmas.length)));
 
     private final double HUGE_NEGATIVE = -10000000.0;
     private final double HUGE_POSITIVE =  10000000.0;
@@ -48,13 +39,6 @@ public class SingleTreeNode
 
     public SingleTreeNode(Random rnd, int num_actions, Types.ACTIONS[] actions) {
         this(null, -1, rnd, num_actions, actions);
-        if(!initialised){
-            for(int i = 0; i< weights.length; i++) {
-                weights[i] = r.nextDouble();
-                sigmas[i] = 0.25;
-            }
-            initialised= true;
-        }
     }
 
     public SingleTreeNode(SingleTreeNode parent, int childIdx, Random rnd, int num_actions, Types.ACTIONS[] actions) {
@@ -73,16 +57,6 @@ public class SingleTreeNode
 
 
     public void mctsSearch(ElapsedCpuTimer elapsedTimer) {
-        // mutate sigmas and weights
-        double mut_0 = r.nextGaussian()*tau_0;
-        for(int i = 0; i < sigmas.length;i++){
-            double mut_1 = r.nextGaussian()*tau_1;
-            sigmas[i] = sigmas[i] * Math.exp(mut_0+mut_1);
-            new_weights[i] = weights[i] + r.nextGaussian()*sigmas[i];
-            if(new_weights[i] > 5) new_weights[i] = 5;
-            if(new_weights[i] < -5) new_weights[i] = -5;
-        }
-
 
         double avgTimeTaken = 0;
         double acumTimeTaken = 0;
@@ -108,14 +82,7 @@ public class SingleTreeNode
             avgTimeTaken  = acumTimeTaken/numIters;
             remaining = elapsedTimer.remainingTimeMillis();
         }
-        //selection: is new_weights better than weights?
-        System.out.println("comparison " +performance_weights + " " + performance_new_weights);
-        if (performance_new_weights >performance_weights){
-            weights = new_weights.clone(); // not sure if i need a deep copy here
-            performance_weights = performance_new_weights;
-        }
-        System.out.println("WEIGHTS" + Arrays.toString(weights) + " performance " + performance_weights);
-    }
+}
 
     public SingleTreeNode treePolicy(StateObservation state) {
 
@@ -191,8 +158,7 @@ public class SingleTreeNode
     }
 
     public static ArrayList<double[]> events = new ArrayList<>();
-    public double rollOut(StateObservation state)
-    {
+    public double rollOut(StateObservation state) {
         //deepcopy the events
         ArrayList<double[]> start = new ArrayList<>();
         for (double[] doubles : events) start.add(doubles.clone());
@@ -206,26 +172,41 @@ public class SingleTreeNode
         // initialise the depth, and save the value of the state before the rollout
         int thisDepth = this.m_depth;
         double current_val = value(state);
-        while (!finishRollout(state,thisDepth)) {
+        while (!finishRollout(state, thisDepth)) {
             /**
-            For the Knowledge items
-            1. get collision points NPC, Movable, immovable etc etc
-            2. get avatar and avatar sprites position
-            3. check for collisions
-            4. if there is a collision go through arraylist to see if it is in it, if not, then add new entry
+             For the Knowledge items
+             1. get collision points NPC, Movable, immovable etc etc
+             2. get avatar and avatar sprites position
+             3. check for collisions
+             4. if there is a collision go through arraylist to see if it is in it, if not, then add new entry
              */
             collidables = new ArrayList<>();
-            if (!Objects.isNull(state.getNPCPositions())) { for(int i = 0; i <  state.getNPCPositions().length; i ++) collidables.addAll(state.getNPCPositions()[i]); }
-            if (!Objects.isNull(state.getImmovablePositions())) { for(int i = 0; i <  state.getImmovablePositions().length; i ++) collidables.addAll(state.getImmovablePositions()[i]); }
-            if (!Objects.isNull(state.getMovablePositions())){ for(int i = 0; i <  state.getMovablePositions().length; i ++) collidables.addAll(state.getMovablePositions()[i]); }
-            if (!Objects.isNull(state.getResourcesPositions())){ for(int i = 0; i <  state.getResourcesPositions().length; i ++) collidables.addAll(state.getResourcesPositions()[i]); }
-            if (!Objects.isNull(state.getPortalsPositions())) { for(int i = 0; i <  state.getPortalsPositions().length; i ++) collidables.addAll(state.getPortalsPositions()[i]); }
+            if (!Objects.isNull(state.getNPCPositions())) {
+                for (int i = 0; i < state.getNPCPositions().length; i++) collidables.addAll(state.getNPCPositions()[i]);
+            }
+            if (!Objects.isNull(state.getImmovablePositions())) {
+                for (int i = 0; i < state.getImmovablePositions().length; i++)
+                    collidables.addAll(state.getImmovablePositions()[i]);
+            }
+            if (!Objects.isNull(state.getMovablePositions())) {
+                for (int i = 0; i < state.getMovablePositions().length; i++)
+                    collidables.addAll(state.getMovablePositions()[i]);
+            }
+            if (!Objects.isNull(state.getResourcesPositions())) {
+                for (int i = 0; i < state.getResourcesPositions().length; i++)
+                    collidables.addAll(state.getResourcesPositions()[i]);
+            }
+            if (!Objects.isNull(state.getPortalsPositions())) {
+                for (int i = 0; i < state.getPortalsPositions().length; i++)
+                    collidables.addAll(state.getPortalsPositions()[i]);
+            }
             // Get avatar thingd
             avatar_produced = new ArrayList<>();
-            if (!Objects.isNull(state.getFromAvatarSpritesPositions())) avatar_produced.addAll(state.getFromAvatarSpritesPositions()[0]);
+            if (!Objects.isNull(state.getFromAvatarSpritesPositions()))
+                avatar_produced.addAll(state.getFromAvatarSpritesPositions()[0]);
             Vector2d avatar_pos = state.getAvatarPosition();
             boolean calc_distance = false; // calculate inital distances for KB
-            if (thisDepth == this.m_depth) calc_distance=true;
+            if (thisDepth == this.m_depth) calc_distance = true;
             //collisions
             for (Observation collidable : collidables) {
                 for (Observation avatar_made : avatar_produced) {
@@ -246,24 +227,25 @@ public class SingleTreeNode
                         if (!found) {
                             double[] temp = {a, b, 1, (value(state) - current_val)};
                             events.add(temp);
-                        }}
-                        if (calc_distance) {
-                            boolean found = false;
-                            int a = avatar_made.itype;
-                            int b = collidable.itype;
-                            for (double[] d : distances) {
-                                if (d[0] == a && d[1] == b && avatar_made.position.dist(collidable.position) < d[2]) {
-                                    d[2] = avatar_made.position.dist(collidable.position);
-                                    found = true;
-                                    break;
-                                }
-                                if (d[0] == avatar_made.itype && d[1] == collidable.itype) found = true;
-                            }
-                            if (!found) {
-                                double[] temp = {avatar_made.itype, collidable.itype, avatar_made.position.dist(collidable.position), -1};
-                                distances.add(temp);
-                            }
                         }
+                    }
+                    if (calc_distance) {
+                        boolean found = false;
+                        int a = avatar_made.itype;
+                        int b = collidable.itype;
+                        for (double[] d : distances) {
+                            if (d[0] == a && d[1] == b && avatar_made.position.dist(collidable.position) < d[2]) {
+                                d[2] = avatar_made.position.dist(collidable.position);
+                                found = true;
+                                break;
+                            }
+                            if (d[0] == avatar_made.itype && d[1] == collidable.itype) found = true;
+                        }
+                        if (!found) {
+                            double[] temp = {avatar_made.itype, collidable.itype, avatar_made.position.dist(collidable.position), -1};
+                            distances.add(temp);
+                        }
+                    }
                 }
                 if (collidable.position.dist(avatar_pos) < state.getBlockSize()) {
                     //check for events
@@ -285,7 +267,7 @@ public class SingleTreeNode
                         events.add(temp);
                     }
                 }
-                if(calc_distance){
+                if (calc_distance) {
                     boolean found = false;
                     for (double[] d : distances) {
                         if (d[0] == avatar_type && d[1] == collidable.itype && avatar_pos.dist(collidable.position) < d[2]) {
@@ -295,47 +277,20 @@ public class SingleTreeNode
                         }
                         if (d[0] == avatar_type && d[1] == collidable.itype) found = true;
                     }
-                    if(!found) {
+                    if (!found) {
                         double[] temp = {avatar_type, collidable.itype, avatar_pos.dist(collidable.position), -1};
                         distances.add(temp);
                     }
                 }
             }
             current_val = value(state);
-            //for fast evolutionary, decide action based on linear weighted some of distances
-            double[] action_values = new double[num_actions];
-            for(int i = 0; i< num_actions;i++){
-                StateObservation st = state.copy();
-                st.advance(actions[i]);
-                // EVALUATE IE GET DISTANCES
 
-                ArrayList<double[]>dist = get_start_distances(collidables, avatar_produced, avatar_pos, avatar_type);
-                for(int j = 0; j< dist.size(); j++) {
-                    if (j < new_weights.length)
-                        action_values[i] += new_weights[j] * dist.get(j)[2];
-                }
-            }
-            // evaluate which action to take with a softmax
-            double[] exp_action_values = new double[num_actions];
-            double exp_action_sum = 0;
-            for(int i =0 ; i< exp_action_values.length; i++){
-                double temp = Math.exp(-action_values[i]);
-                exp_action_values[i] = temp;
-                exp_action_sum += temp;
-            }
-            int best = 0; double best_val = 0;
-            for(int i = 0; i < exp_action_values.length; i++){
-                double temp = exp_action_values[i]/exp_action_sum;
-                if (temp > best_val){
-                    best_val = temp;
-                    best = i;
-                }
-            }
-            //int action = m_rnd.nextInt(num_actions);
-            state.advance(actions[best]);
-            thisDepth++;
 
-        }
+        int action = m_rnd.nextInt(num_actions);
+        state.advance(actions[action]);
+        thisDepth++;
+
+    }
 
         double delta = value(state);
         double value = delta - current_val;
@@ -351,7 +306,6 @@ public class SingleTreeNode
 
         //double normDelta = utils.normalise(delta ,lastBounds[0], lastBounds[1]);
         //System.out.println("VALUE" + (value+delta));
-        performance_new_weights = value+delta;
         return value +delta;
         //return delta;
     }

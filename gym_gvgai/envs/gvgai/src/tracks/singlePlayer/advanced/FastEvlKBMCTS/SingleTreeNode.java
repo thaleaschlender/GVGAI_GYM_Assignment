@@ -17,9 +17,9 @@ public class SingleTreeNode
 {
     //evolutionary strategy attempt: euclidean distances from the avatar to the different types of closest NPC, resource, non-static object and portal.
     public static Random r = new Random();
-    public static boolean initialised = false;
-    public static double[] weights = new double[10];
-    public static double[] new_weights = new double[10];
+    public static double[][] weights = new double[10][3];
+    public static double[][] new_weights = new double[10][3];
+    public static int empty = 0;
     public static double performance_weights = 0;
     public static double performance_new_weights = 0;
     public static double[] sigmas = new double[10];
@@ -46,14 +46,18 @@ public class SingleTreeNode
 
     public StateObservation rootState;
 
-    public SingleTreeNode(Random rnd, int num_actions, Types.ACTIONS[] actions) {
+    public SingleTreeNode(Random rnd, int num_actions, Types.ACTIONS[] actions, Boolean reset) {
         this(null, -1, rnd, num_actions, actions);
-        if(!initialised){
+        if(reset){
             for(int i = 0; i< weights.length; i++) {
-                weights[i] = r.nextDouble();
+                weights[i][0] = r.nextDouble();
+                weights[i][1] = 0;
+                weights[i][2] = 0;
+                empty = 0;
+                performance_weights =0;
+                performance_new_weights =0;
                 sigmas[i] = 0.25;
             }
-            initialised= true;
         }
     }
 
@@ -73,15 +77,7 @@ public class SingleTreeNode
 
 
     public void mctsSearch(ElapsedCpuTimer elapsedTimer) {
-        // mutate sigmas and weights
-        double mut_0 = r.nextGaussian()*tau_0;
-        for(int i = 0; i < sigmas.length;i++){
-            double mut_1 = r.nextGaussian()*tau_1;
-            sigmas[i] = sigmas[i] * Math.exp(mut_0+mut_1);
-            new_weights[i] = weights[i] + r.nextGaussian()*sigmas[i];
-            if(new_weights[i] > 5) new_weights[i] = 5;
-            if(new_weights[i] < -5) new_weights[i] = -5;
-        }
+
 
 
         double avgTimeTaken = 0;
@@ -94,7 +90,15 @@ public class SingleTreeNode
         //WHILE TIME LEFT
         while(remaining > 2*avgTimeTaken && remaining > remainingLimit){
         //while(numIters < Agent.MCTS_ITERATIONS){
-
+            // mutate sigmas and weights
+            double mut_0 = r.nextGaussian()*tau_0;
+            for(int i = 0; i < sigmas.length;i++){
+                double mut_1 = r.nextGaussian()*tau_1;
+                sigmas[i] = sigmas[i] * Math.exp(mut_0+mut_1);
+                new_weights[i][0] = weights[i][0] + r.nextGaussian()*sigmas[i];
+                if(new_weights[i][0] > 5) new_weights[i][0] = 5;
+                if(new_weights[i][0] < -5) new_weights[i][0] = -5;
+            }
             StateObservation state = rootState.copy();
 
             ElapsedCpuTimer elapsedTimerIteration = new ElapsedCpuTimer();
@@ -107,14 +111,15 @@ public class SingleTreeNode
             //System.out.println(elapsedTimerIteration.elapsedMillis() + " --> " + acumTimeTaken + " (" + remaining + ")");
             avgTimeTaken  = acumTimeTaken/numIters;
             remaining = elapsedTimer.remainingTimeMillis();
+            //selection: is new_weights better than weights?
+            //System.out.println("comparison " +performance_weights + " " + performance_new_weights);
+            if (performance_new_weights >=performance_weights){
+                weights = new_weights.clone(); // not sure if i need a deep copy here
+                performance_weights = performance_new_weights;
+            }
         }
-        //selection: is new_weights better than weights?
-        System.out.println("comparison " +performance_weights + " " + performance_new_weights);
-        if (performance_new_weights >=performance_weights){
-            weights = new_weights.clone(); // not sure if i need a deep copy here
-            performance_weights = performance_new_weights;
-        }
-        System.out.println("WEIGHTS" + Arrays.toString(weights) + " performance " + performance_weights);
+
+        //System.out.println("WEIGHTS" + Arrays.toString(weights) + " performance " + performance_weights);
     }
 
     public SingleTreeNode treePolicy(StateObservation state) {
@@ -320,10 +325,23 @@ public class SingleTreeNode
                 avatar_pos = st.getAvatarPosition();
                 ArrayList<double[]>dist = get_start_distances(collidables, avatar_produced, avatar_pos, avatar_type);
                 for(int j = 0; j< dist.size(); j++) {
-                    if (j < new_weights.length)
-                        action_values[k] += new_weights[j] * dist.get(j)[2];
+                    boolean found = false;
+                    for(int w = 0; w < empty; w++) {
+                        if (new_weights[w][1] == dist.get(j)[0] && new_weights[w][2] == dist.get(j)[1]) {
+                            action_values[k] += new_weights[w][0] * dist.get(j)[2];
+                            found = true;
+                            break;
+                        }
+                    }
+                    if(!found && empty<10){
+                        action_values[k] += new_weights[empty][0] * dist.get(j)[2];
+                        new_weights[empty][1] = dist.get(j)[0];
+                        new_weights[empty][2] = dist.get(j)[1];
+                        empty++;
+                    }
                 }
             }
+
             // evaluate which action to take with a softmax
             double[] exp_action_values = new double[num_actions];
             double exp_action_sum = 0;

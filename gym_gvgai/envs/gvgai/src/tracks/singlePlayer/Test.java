@@ -1,5 +1,6 @@
 package tracks.singlePlayer;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import core.logging.Logger;
@@ -20,23 +21,25 @@ public class Test {
 		String sampleOneStepController = "tracks.singlePlayer.simple.sampleonesteplookahead.Agent";
 		String sampleFlatMCTSController = "tracks.singlePlayer.simple.greedyTreeSearch.Agent";
 
-		String sampleMCTSController = "tracks.singlePlayer.advanced.sampleMCTS.Agent";
+
+
         String sampleRSController = "tracks.singlePlayer.advanced.sampleRS.Agent";
         String sampleRHEAController = "tracks.singlePlayer.advanced.sampleRHEA.Agent";
 		String sampleOLETSController = "tracks.singlePlayer.advanced.olets.Agent";
 		String FastEvalKBMCTS = "tracks.singlePlayer.advanced.FastEvlKBMCTS.Agent" ;
 		String FastEvalMCTS = "tracks.singlePlayer.advanced.FastEvolMCTS.Agent";
+		String KBMCTS = "tracks.singlePlayer.advanced.student.Agent";
 		//Load available games
 		String spGamesCollection = "games.csv";//"gym_gvgai/envs/gvgai/games.csv";
 		String[][] games = Utils.readGames(spGamesCollection);
 
 		//Game settings
 		boolean visuals = true;
-		int seed = new Random().nextInt();
+		int seed = 1234;//new Random().nextInt();
 		System.out.println(seed);
 
 		// Game and level to play
-		int gameIdx =120;// 74; //120
+		int gameIdx =13;// 74; //120
 		int levelIdx = 0; // level names from 0 to 4 (game_lvlN.txt).
 		String gameName = games[gameIdx][1];
 		String game = games[gameIdx][0];
@@ -52,7 +55,7 @@ public class Test {
 
 		// 2. This plays a game in a level by the controller.
 
-		ArcadeMachine.runOneGame(game, level1, visuals, FastEvalMCTS, recordActionsFile, seed, 0);
+		//ArcadeMachine.runOneGame(game, level1, visuals,FastEvalMCTS, recordActionsFile, seed, 0);
 
 
 		// 3. This replays a game from an action file previously recorded
@@ -60,15 +63,15 @@ public class Test {
 	//	 ArcadeMachine.replayGame(game, level1, visuals, readActionsFile);
 
 		// 4. This plays a single game, in N levels, M times :
-		/*
+
 		String level2 = new String(game).replace(gameName, gameName + "_lvl" + 1);
-		int M = 10;
-		int[] game_indices = {87};// {0,11,13,18,44,65,74,87,91,108};
+		/*int M = 10;
+		int[] game_indices = {0,11,13,18,44,65,74,87,91,108};
 		for (int i: game_indices) {
 			game = games[i][0];
 			gameName = games[i][1];
 			level1 = game.replace(gameName, gameName + "_lvl" + levelIdx);
-			ArcadeMachine.runGames(game, new String[]{level1}, M, sampleMCTSController, null);
+			ArcadeMachine.runGames(game, new String[]{level1}, M,FastEvalMCTS, null);
 		}*/
 		/*
 		for(int i=0; i<games.length; i++){
@@ -79,22 +82,21 @@ public class Test {
 		}*/
 
 		//5. This plays N games, in the first L levels, M times each. Actions to file optional (set saveActions to true).
-//		int N = games.length, L = 2, M = 1;
-//		boolean saveActions = false;
-//		String[] levels = new String[L];
-//		String[] actionFiles = new String[L*M];
-//		for(int i = 0; i < N; ++i)
-//		{
-//			int actionIdx = 0;
-//			game = games[i][0];
-//			gameName = games[i][1];
-//			for(int j = 0; j < L; ++j){
-//				levels[j] = game.replace(gameName, gameName + "_lvl" + j);
-//				if(saveActions) for(int k = 0; k < M; ++k)
-//				actionFiles[actionIdx++] = "actions_game_" + i + "_level_" + j + "_" + k + ".txt";
-//			}
-//			ArcadeMachine.runGames(game, levels, M, sampleRHEAController, saveActions? actionFiles:null);
-//		}
+		int N = games.length, L = 1, M = 20;
+		boolean saveActions = false;
+		String[] levels = new String[L];
+		String[] actionFiles = new String[L*M];
+		for(int i = 0; i < N; ++i){
+			int actionIdx = 0;
+			game = games[i][0];
+			gameName = games[i][1];
+			for(int j = 0; j < L; ++j){
+				levels[j] = game.replace(gameName, gameName + "_lvl" + j);
+				if(saveActions) for(int k = 0; k < M; ++k)
+				actionFiles[actionIdx++] = "actions_game_" + i + "_level_" + j + "_" + k + ".txt";
+			}
+			ArcadeMachine.runGames(game, levels, M, KBMCTS, saveActions? actionFiles: null);
+		}
 
 
     }

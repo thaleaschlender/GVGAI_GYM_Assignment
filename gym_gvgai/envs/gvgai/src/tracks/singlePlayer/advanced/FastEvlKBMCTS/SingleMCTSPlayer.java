@@ -44,7 +44,7 @@ public class SingleMCTSPlayer
     {
         //Set the game observation to a newly root node.
         //System.out.println("learning_style = " + learning_style);
-        m_root = new SingleTreeNode(m_rnd, num_actions, actions);
+        m_root = new SingleTreeNode(m_rnd, num_actions, actions,true);
         m_root.rootState = a_gameState;
     }
 
