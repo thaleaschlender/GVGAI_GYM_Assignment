@@ -1,13 +1,12 @@
 package tracks.singlePlayer.advanced.student;
 
-import java.util.ArrayList;
-import java.util.Random;
-
 import core.game.StateObservation;
 import core.player.AbstractPlayer;
 import ontology.Types;
 import tools.ElapsedCpuTimer;
-import tracks.singlePlayer.advanced.student.SingleMCTSPlayer;
+
+import java.util.ArrayList;
+import java.util.Random;
 
 /**
 Adaptation and extension of the provided MCTS controller
@@ -17,8 +16,7 @@ public class Agent extends AbstractPlayer {
     public int num_actions;
     public Types.ACTIONS[] actions;
 
-    protected tracks.singlePlayer.advanced.student.SingleMCTSPlayer mctsPlayer;
-
+    protected SingleMCTSPlayer mctsPlayer;
     /**
      * Public constructor with state observation and time due.
      * @param so state observation of the current game.
@@ -40,7 +38,7 @@ public class Agent extends AbstractPlayer {
         mctsPlayer = getPlayer(so, elapsedTimer);
     }
 
-    public tracks.singlePlayer.advanced.student.SingleMCTSPlayer getPlayer(StateObservation so, ElapsedCpuTimer elapsedTimer) {
+    public SingleMCTSPlayer getPlayer(StateObservation so, ElapsedCpuTimer elapsedTimer) {
         return new SingleMCTSPlayer(new Random(), num_actions, actions);
     }
 
